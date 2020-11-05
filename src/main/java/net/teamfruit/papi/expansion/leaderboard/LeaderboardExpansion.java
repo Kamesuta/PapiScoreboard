@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LeaderboardExpansion extends PlaceholderExpansion {
 
@@ -95,8 +97,8 @@ public class LeaderboardExpansion extends PlaceholderExpansion {
         int ranking = args.size() <= 1 ? -1 : NumberUtils.toInt(args.get(1), -1);
         if (ranking == -1)
             return "Missing args[1]";
-        String format = args.size() <= 2 ? "%s: %d" : args.get(2).replace("％", "%");
-        String formatMe = args.size() <= 3 ? format : args.get(3).replace("％", "%");
+        String format = args.size() <= 2 ? "%d) %s: %d" : args.get(2).replace("％", "%").replace("＆", "§");
+        String formatMe = args.size() <= 3 ? format : args.get(3).replace("％", "%").replace("＆", "§");
 
         Optional<String> playerName = Optional.ofNullable(player).map(OfflinePlayer::getName);
 
@@ -105,7 +107,7 @@ public class LeaderboardExpansion extends PlaceholderExpansion {
             Objective obj = board.getObjective(objName);
             if (obj == null)
                 return "ObjScoreTop:NotFound";
-            return board.getEntries().stream()
+            List<AbstractMap.SimpleEntry<String, Integer>> list = board.getEntries().stream()
                     .map(e -> {
                         Score score = obj.getScore(e);
                         if (!score.isScoreSet())
@@ -113,18 +115,22 @@ public class LeaderboardExpansion extends PlaceholderExpansion {
                         int value = score.getScore();
                         return new AbstractMap.SimpleEntry<>(e, value);
                     })
+                    .filter(Objects::nonNull)
                     .sorted(Map.Entry.comparingByKey())
+                    .collect(Collectors.toList());
+            return IntStream.range(0, list.size())
+                    .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, list.get(i)))
                     .skip(ranking)
                     .limit(1)
                     .findFirst()
                     .map(e -> String.format(playerName.map(f ->
-                            f.equals(e.getKey())).orElse(false)
+                            f.equals(e.getValue().getKey())).orElse(false)
                             ? formatMe
                             : format,
-                            e.getKey(), e.getValue()))
+                            e.getKey(), e.getValue().getKey(), e.getValue().getValue()))
                     .orElse("");
-        } catch (Exception ignored) {
-            return "ObjScoreTop";
+        } catch (Exception e) {
+            return "ObjScoreTop:"+e;
         }
     }
 
