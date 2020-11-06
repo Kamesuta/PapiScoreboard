@@ -116,21 +116,21 @@ public class LeaderboardExpansion extends PlaceholderExpansion {
                         return new AbstractMap.SimpleEntry<>(e, value);
                     })
                     .filter(Objects::nonNull)
-                    .sorted(Map.Entry.comparingByKey())
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                     .collect(Collectors.toList());
             return IntStream.range(0, list.size())
-                    .mapToObj(i -> new AbstractMap.SimpleEntry<>(i, list.get(i)))
+                    .mapToObj(i -> new AbstractMap.SimpleEntry<>(i + 1, list.get(i)))
                     .skip(ranking)
                     .limit(1)
                     .findFirst()
                     .map(e -> String.format(playerName.map(f ->
-                            f.equals(e.getValue().getKey())).orElse(false)
-                            ? formatMe
-                            : format,
+                                    f.equals(e.getValue().getKey())).orElse(false)
+                                    ? formatMe
+                                    : format,
                             e.getKey(), e.getValue().getKey(), e.getValue().getValue()))
                     .orElse("");
         } catch (Exception e) {
-            return "ObjScoreTop:"+e;
+            return "ObjScoreTop:" + e;
         }
     }
 
